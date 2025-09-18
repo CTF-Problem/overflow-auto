@@ -1,0 +1,86 @@
+name: Docker images to GHCR
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*', 'release-*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # overflow 이미지 메타데이터 및 태그 정의
+      - name: Extract metadata (overflow)
+        id: meta_overflow
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/ctf-problem/overflow-auto/overflow
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,format=short
+            type=ref,event=tag
+
+      - name: Build and push overflow
+        uses: docker/build-push-action@v6
+        with:
+          context: ./nc_overflow
+          file: ./nc_overflow/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta_overflow.outputs.tags }}
+          labels: ${{ steps.meta_overflow.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # webshell 이미지 메타데이터 및 태그 정의
+      - name: Extract metadata (webshell)
+        id: meta_webshell
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/ctf-problem/overflow-auto/webshell
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,format=short
+            type=ref,event=tag
+
+      - name: Build and push webshell
+        uses: docker/build-push-action@v6
+        with:
+          context: ./flask_webshell
+          file: ./flask_webshell/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta_webshell.outputs.tags }}
+          labels: ${{ steps.meta_webshell.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

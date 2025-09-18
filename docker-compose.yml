@@ -7,20 +7,26 @@ services:
       - "80:80"
     depends_on:
       - webshell
+
   overflow:
-    build:
-      context: ./nc_overflow
-      dockerfile: Dockerfile
+    image: ghcr.io/ctf-problem/overflow-auto/overflow:latest
+  # for test: 로컬에서 이미지를 직접 빌드하려면 아래 주석을 해제하세요
+  # build:
+  #   context: ./nc_overflow
+  #   dockerfile: Dockerfile
     environment:
       - FLAG=bob_dev{flag_example}
     depends_on:
       - nginx
     expose:
       - 5001
+
   webshell:
-    build:
-      context: ./flask_webshell
-      dockerfile: Dockerfile
+    image: ghcr.io/ctf-problem/overflow-auto/webshell:latest
+  # for test: 로컬에서 이미지를 직접 빌드하려면 아래 주석을 해제하세요
+  # build:
+  #   context: ./flask_webshell
+  #   dockerfile: Dockerfile
     expose:
       - 5000
       - 5001
