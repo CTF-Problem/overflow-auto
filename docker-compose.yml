@@ -1,0 +1,27 @@
+services:
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - webshell
+  overflow:
+    build:
+      context: ./nc_overflow
+      dockerfile: Dockerfile
+    environment:
+      - FLAG=bob_dev{flag_example}
+    depends_on:
+      - nginx
+    expose:
+      - 5001
+  webshell:
+    build:
+      context: ./flask_webshell
+      dockerfile: Dockerfile
+    expose:
+      - 5000
+      - 5001
+  
